@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+       http://www.springframework.org/schema/beans/spring-beans.xsd
+       http://www.springframework.org/schema/context
+       https://www.springframework.org/schema/context/spring-context.xsd">
+    <!--spring配置文件-->
+    <!--使用外部文件来提供数据库连接信息-->
+    <context:property-placeholder location="classpath:conf/jdbc.properties" />
+
+    <!--声明数据源，DataSource，作用是连接数据库-->
+    <bean id="myDataSource" class="com.alibaba.druid.pool.DruidDataSource" init-method="init"
+          destroy-method="close">
+        <!--通过set注入的方式提供连接数据库的信息-->
+        <property name="url" value="${jdbc.mysql.url}"/>
+        <property name="username" value="${jdbc.mysql.username}"/>
+        <property name="password" value="${jdbc.mysql.password}"/>
+        <property name="maxActive" value="${jdbc.mysql.max}" />
+    </bean>
+
+    <!--声明SqlSessionFactoryBean类，在这个类的内部创建SqlSessionFactory对象-->
+    <bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+        <!--将数据库的信息赋给dataSource属性,采用的是set注入-->
+        <property name="dataSource" ref="myDataSource"/>
+        <!--链入外部文件-读取mybatis配置文件-->
+        <property name="configLocation" value="classpath:/conf/mybatis.xml"/>
+    </bean>
+
+    <!--
+        创建dao对象，使用的是SqlSession中的getMapper方法(StudentDao.class)
+        MapperScannerConfigurer：在内部调用getMapper()生成dao的代理对象。
+    -->
+    <bean class="org.mybatis.spring.mapper.MapperScannerConfigurer">
+        <!--指定SqlSessionFactory的id-->
+        <property name="sqlSessionFactoryBeanName" value="sqlSessionFactory" />
+        <!--指定包名，dao类所在的包名
+            MapperScannerConfigurer会扫描这个包所有的dao接口，调用getMapper()方法
+            生成每一个dao接口的代理对象。
+            将创建好的dao对象放入到spring容器中，dao的默认名称：接口的首字母小写
+        -->
+        <property name="basePackage" value="com/efeng/ssm/mapper"/>
+    </bean>
+
+    <!--声明组件扫描器-->
+    <context:component-scan base-package="com.efeng.ssm.service"/>
+
+    <bean id="springContextHelper" class="com.efeng.utils.SpringContextHelper"/>
+
+</beans>
